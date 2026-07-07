@@ -1,6 +1,8 @@
 extends KinematicBody2D
 class_name HormigaBase
 
+var puede_atacar = true
+
 export (String, "COMUN", "ROJA") var faccion = "COMUN"
 export (String, "RECOLECTORA", "GUERRERA") var clase = "RECOLECTORA"
 
@@ -68,7 +70,7 @@ func _physics_process(delta):
 				return
 			calcular_camino_hacia(objetivo_enemigo.global_position)
 			moverse_por_camino()
-			if global_position.distance_to(objetivo_enemigo.global_position) < 20:
+			if global_position.distance_to(objetivo_enemigo.global_position) < 80:
 				atacar_enemigo()
 
 		Estado.HUIR:
@@ -159,10 +161,24 @@ func reaccionar_ante_enemigo(enemigo):
 		print(faccion, " ", clase, ": ¡Huyendo al hormiguero!")
 
 func atacar_enemigo():
-	print("¡Pelea intensa!")
-	if is_instance_valid(objetivo_enemigo):
-		objetivo_enemigo.queue_free()
-	recalcular_a_deambular()
+	
+	if is_queued_for_deletion() or not is_instance_valid(objetivo_enemigo) or objetivo_enemigo.is_queued_for_deletion():
+		recalcular_a_deambular()
+		return
+
+	
+	if "clase" in objetivo_enemigo and objetivo_enemigo.clase == "GUERRERA":
+		print("¡Duelo de guerreras! Ambas caen en combate.")
+		objetivo_enemigo.queue_free() 
+		self.queue_free()             
+		return                        
+
+	
+	else:
+		print("Guerrera elimina a indefensa.")
+		objetivo_enemigo.queue_free() # Elimina a la recolectora
+		recalcular_a_deambular()
+		return
 
 func entrar_al_refugio():
 	estado_actual = Estado.EN_REFUGIO
